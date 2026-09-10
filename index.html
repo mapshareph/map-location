@@ -123,10 +123,17 @@
             });
 
           if (error) {
-            console.error(error);
-            status.textContent = "Location was found, but saving failed. Check your Supabase setup.";
-            btn.disabled = false;
-            return;
+  console.error("Supabase error:", error);
+
+  status.innerHTML =
+    "<b>Database error:</b><br>" +
+    error.message +
+    "<br><br><small>Code: " +
+    (error.code || "none") +
+    "</small>";
+
+  btn.disabled = false;
+  return;
           }
 
           status.innerHTML =
