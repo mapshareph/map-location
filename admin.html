@@ -3,131 +3,460 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Private Location Log</title>
+  <title>Private Location Dashboard</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f5f7; color: #111; }
-    .wrap { max-width: 1000px; margin: 40px auto; padding: 0 18px; }
-    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 15px;
+    * {
+      box-sizing: border-box;
     }
-    button { border: 0; background: #111; color: #fff; font-weight: 700; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { padding: 10px; border-bottom: 1px solid #e5e5e5; text-align: left; font-size: 14px; }
-    a { color: #1565c0; }
-    #app { display: none; }
-    #message { margin-top: 10px; font-size: 14px; }
-    .topbar { display: flex; gap: 10px; align-items: center; }
-    .topbar button { width: auto; padding-left: 18px; padding-right: 18px; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f5f7;
+      color: #111;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.08);
+    }
+
+    h1, h2, p {
+      margin-top: 0;
+    }
+
+    input, button {
+      font: inherit;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+      background: #111;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #e9e9e9;
+      color: #111;
+    }
+
+    #loginBtn {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    #app {
+      display: none;
+    }
+
+    #message {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .topbar h1 {
+      flex: 1;
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      background: #f7f7f8;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    #map {
+      width: 100%;
+      height: 420px;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid #e8e8e8;
+      font-size: 14px;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: #f7f7f7;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f1f1f1;
+      font-size: 12px;
+    }
+
+    a {
+      color: #1565c0;
+      text-decoration: none;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 13px;
+    }
+
     @media (max-width: 700px) {
-      table { display: block; overflow-x: auto; white-space: nowrap; }
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 320px;
+      }
+
+      .topbar button {
+        flex: 1;
+      }
     }
   </style>
 </head>
 <body>
+
 <div class="wrap">
+
   <div class="card" id="loginCard">
-    <h2>Private Location Log</h2>
-    <p>Sign in with the Supabase admin account you created for this project.</p>
-    <input id="email" type="email" placeholder="Admin email" />
-    <input id="password" type="password" placeholder="Password" />
+    <h2>Private Location Dashboard</h2>
+    <p class="muted">
+      Sign in with your Supabase account to view locations that were explicitly shared and saved by users.
+    </p>
+
+    <input id="email" type="email" placeholder="Email" autocomplete="username" />
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
     <button id="loginBtn">Sign In</button>
+
     <div id="message"></div>
   </div>
 
   <div id="app">
+
     <div class="card">
       <div class="topbar">
-        <div style="flex:1">
-          <h2 style="margin:0">Saved Location Submissions</h2>
-        </div>
-        <button id="refreshBtn">Refresh</button>
+        <h1>Location Dashboard</h1>
+        <button id="refreshBtn" class="secondary">Refresh</button>
         <button id="logoutBtn">Sign Out</button>
       </div>
 
-      <div id="tableWrap"></div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Total submissions</div>
+          <div class="value" id="totalCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Latest accuracy</div>
+          <div class="value" id="latestAccuracy">-</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Latest submission</div>
+          <div class="value" id="latestTime" style="font-size:16px">-</div>
+        </div>
+      </div>
     </div>
+
+    <div class="card">
+      <h2>Map</h2>
+      <p class="muted">Click a table row to focus its marker.</p>
+      <div id="map"></div>
+    </div>
+
+    <div class="card">
+      <h2>Saved Location Submissions</h2>
+      <div id="status" class="muted">Loading...</div>
+      <div class="table-wrap" id="tableWrap"></div>
+    </div>
+
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // ====== USE THE SAME VALUES AS index.html ======
-  const SUPABASE_URL = "YOUR_SUPABASE_URL";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
-  // ==============================================
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script>
+  const SUPABASE_URL = "https://ctybxvpdbvqazrpqhpwn.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_8mbbQTSYZ3SL29t4a6OckA_13cgSXsC";
+
+  const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
   const loginCard = document.getElementById("loginCard");
   const app = document.getElementById("app");
-  const msg = document.getElementById("message");
+  const message = document.getElementById("message");
+  const statusEl = document.getElementById("status");
+  const tableWrap = document.getElementById("tableWrap");
+
+  let map;
+  let markerLayer;
+  let markersById = {};
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatPHTime(value) {
+    return new Intl.DateTimeFormat("en-PH", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    }).format(new Date(value));
+  }
+
+  function initMap() {
+    if (map) return;
+
+    map = L.map("map").setView([14.5995, 120.9842], 10);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    markerLayer = L.layerGroup().addTo(map);
+  }
 
   async function loadLocations() {
-    const wrap = document.getElementById("tableWrap");
-    wrap.textContent = "Loading...";
+    statusEl.textContent = "Loading locations...";
+    tableWrap.innerHTML = "";
 
     const { data, error } = await supabaseClient
       .from("location_submissions")
-      .select("id, created_at, latitude, longitude, accuracy_m")
+      .select("id, created_at, latitude, longitude, accuracy_m, user_agent")
       .order("created_at", { ascending: false });
 
     if (error) {
-      wrap.textContent = "Unable to load locations: " + error.message;
+      statusEl.textContent = "Unable to load locations: " + error.message;
       return;
     }
 
-    if (!data.length) {
-      wrap.textContent = "No submitted locations yet.";
+    const rows = data || [];
+
+    document.getElementById("totalCount").textContent = rows.length;
+
+    if (!rows.length) {
+      document.getElementById("latestAccuracy").textContent = "-";
+      document.getElementById("latestTime").textContent = "-";
+      statusEl.textContent = "No submitted locations yet.";
+
+      if (markerLayer) markerLayer.clearLayers();
       return;
     }
 
-    const rows = data.map(item => {
+    document.getElementById("latestAccuracy").textContent =
+      rows[0].accuracy_m == null
+        ? "-"
+        : Math.round(rows[0].accuracy_m) + " m";
+
+    document.getElementById("latestTime").textContent =
+      formatPHTime(rows[0].created_at);
+
+    initMap();
+
+    markerLayer.clearLayers();
+    markersById = {};
+
+    const bounds = [];
+
+    rows.forEach(item => {
+      const lat = Number(item.latitude);
+      const lon = Number(item.longitude);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+      const accuracy =
+        item.accuracy_m == null
+          ? "Unknown"
+          : Math.round(item.accuracy_m) + " m";
+
+      const marker = L.marker([lat, lon]).addTo(markerLayer);
+
+      marker.bindPopup(`
+        <b>Submission #${escapeHtml(item.id)}</b><br>
+        ${escapeHtml(formatPHTime(item.created_at))}<br>
+        Accuracy: ${escapeHtml(accuracy)}
+      `);
+
+      markersById[item.id] = marker;
+      bounds.push([lat, lon]);
+    });
+
+    if (bounds.length === 1) {
+      map.setView(bounds[0], 16);
+    } else if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    const htmlRows = rows.map(item => {
       const lat = Number(item.latitude).toFixed(6);
       const lon = Number(item.longitude).toFixed(6);
-      const accuracy = item.accuracy_m == null ? "" : Math.round(item.accuracy_m) + " m";
-      const when = new Date(item.created_at).toLocaleString();
+      const accuracy =
+        item.accuracy_m == null
+          ? "-"
+          : Math.round(item.accuracy_m) + " m";
 
-      const mapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
+      const device =
+        item.user_agent
+          ? item.user_agent
+          : "-";
+
+      const osmUrl =
+        `https://www.openstreetmap.org/?mlat=${encodeURIComponent(lat)}&mlon=${encodeURIComponent(lon)}#map=17/${encodeURIComponent(lat)}/${encodeURIComponent(lon)}`;
 
       return `
-        <tr>
-          <td>${when}</td>
-          <td>${lat}</td>
-          <td>${lon}</td>
-          <td>${accuracy}</td>
-          <td><a href="${mapUrl}" target="_blank" rel="noopener">Open map</a></td>
-        </tr>`;
+        <tr data-id="${escapeHtml(item.id)}">
+          <td>${escapeHtml(item.id)}</td>
+          <td>${escapeHtml(formatPHTime(item.created_at))}</td>
+          <td>${escapeHtml(lat)}</td>
+          <td>${escapeHtml(lon)}</td>
+          <td><span class="badge">${escapeHtml(accuracy)}</span></td>
+          <td title="${escapeHtml(device)}">${escapeHtml(device.slice(0, 45))}${device.length > 45 ? "..." : ""}</td>
+          <td>
+            <a href="${osmUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+              Open map
+            </a>
+          </td>
+        </tr>
+      `;
     }).join("");
 
-    wrap.innerHTML = `
+    tableWrap.innerHTML = `
       <table>
         <thead>
           <tr>
+            <th>ID</th>
             <th>Submitted</th>
             <th>Latitude</th>
             <th>Longitude</th>
             <th>Accuracy</th>
+            <th>Device / Browser</th>
             <th>Map</th>
           </tr>
         </thead>
-        <tbody>${rows}</tbody>
-      </table>`;
+        <tbody>${htmlRows}</tbody>
+      </table>
+    `;
+
+    tableWrap.querySelectorAll("tbody tr").forEach(row => {
+      row.addEventListener("click", () => {
+        const id = row.dataset.id;
+        const marker = markersById[id];
+
+        if (!marker) return;
+
+        const point = marker.getLatLng();
+        map.setView(point, 17);
+        marker.openPopup();
+
+        document.getElementById("map").scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      });
+    });
+
+    statusEl.textContent =
+      rows.length + (rows.length === 1 ? " submission" : " submissions");
   }
 
   async function showAppIfSignedIn() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const { data: { session } } =
+      await supabaseClient.auth.getSession();
 
     if (session) {
       loginCard.style.display = "none";
       app.style.display = "block";
-      await loadLocations();
+
+      setTimeout(() => {
+        initMap();
+        map.invalidateSize();
+        loadLocations();
+      }, 50);
     } else {
       loginCard.style.display = "block";
       app.style.display = "none";
@@ -135,20 +464,29 @@
   }
 
   document.getElementById("loginBtn").addEventListener("click", async () => {
-    msg.textContent = "Signing in...";
+    message.textContent = "Signing in...";
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
     const { error } = await supabaseClient.auth.signInWithPassword({
-      email: document.getElementById("email").value,
-      password: document.getElementById("password").value
+      email,
+      password
     });
 
     if (error) {
-      msg.textContent = error.message;
+      message.textContent = error.message;
       return;
     }
 
-    msg.textContent = "";
+    message.textContent = "";
     await showAppIfSignedIn();
+  });
+
+  document.getElementById("password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      document.getElementById("loginBtn").click();
+    }
   });
 
   document.getElementById("refreshBtn").addEventListener("click", loadLocations);
@@ -160,5 +498,6 @@
 
   showAppIfSignedIn();
 </script>
+
 </body>
 </html>
