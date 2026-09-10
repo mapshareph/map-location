@@ -1,45 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Map Location Share</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>
-    * { box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; margin: 0; }
-    body { font-family: Arial, sans-serif; }
-    #map { position: fixed; inset: 0; }
+  <meta property="og:title" content="Location Map">
+<meta property="og:description" content="Open the map to view and share a location.">
+<meta property="og:type" content="website">
 
-    .panel {
-      position: fixed;
-      z-index: 1000;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%);
-      width: min(92vw, 420px);
-      background: rgba(255,255,255,.97);
-      padding: 18px;
-      border-radius: 18px;
-      box-shadow: 0 8px 30px rgba(0,0,0,.22);
-    }
-    h2 { margin: 0 0 8px; font-size: 21px; }
-    p { margin: 0 0 14px; line-height: 1.45; color: #444; font-size: 14px; }
-    button {
-      width: 100%;
-      padding: 14px;
-      border: 0;
-      border-radius: 12px;
-      background: #111;
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .6; cursor: default; }
-    #status { margin-top: 12px; font-size: 13px; line-height: 1.4; word-break: break-word; }
-    .privacy { margin-top: 10px; color: #666; font-size: 12px; line-height: 1.35; }
-  </style>
+<meta property="og:image" content="https://mapshareph.github.io/map-location/map-preview.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta property="og:url" content="https://mapshareph.github.io/map-location/">
 </head>
 <body>
   <div id="map"></div>
