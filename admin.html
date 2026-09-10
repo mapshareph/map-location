@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Private Location Log</title>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f5f7; color: #111; }
+    .wrap { max-width: 1000px; margin: 40px auto; padding: 0 18px; }
+    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+    button { border: 0; background: #111; color: #fff; font-weight: 700; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 10px; border-bottom: 1px solid #e5e5e5; text-align: left; font-size: 14px; }
+    a { color: #1565c0; }
+    #app { display: none; }
+    #message { margin-top: 10px; font-size: 14px; }
+    .topbar { display: flex; gap: 10px; align-items: center; }
+    .topbar button { width: auto; padding-left: 18px; padding-right: 18px; }
+    @media (max-width: 700px) {
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="loginCard">
+    <h2>Private Location Log</h2>
+    <p>Sign in with the Supabase admin account you created for this project.</p>
+    <input id="email" type="email" placeholder="Admin email" />
+    <input id="password" type="password" placeholder="Password" />
+    <button id="loginBtn">Sign In</button>
+    <div id="message"></div>
+  </div>
+
+  <div id="app">
+    <div class="card">
+      <div class="topbar">
+        <div style="flex:1">
+          <h2 style="margin:0">Saved Location Submissions</h2>
+        </div>
+        <button id="refreshBtn">Refresh</button>
+        <button id="logoutBtn">Sign Out</button>
+      </div>
+
+      <div id="tableWrap"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ====== USE THE SAME VALUES AS index.html ======
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  // ==============================================
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginCard = document.getElementById("loginCard");
+  const app = document.getElementById("app");
+  const msg = document.getElementById("message");
+
+  async function loadLocations() {
+    const wrap = document.getElementById("tableWrap");
+    wrap.textContent = "Loading...";
+
+    const { data, error } = await supabaseClient
+      .from("location_submissions")
+      .select("id, created_at, latitude, longitude, accuracy_m")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      wrap.textContent = "Unable to load locations: " + error.message;
+      return;
+    }
+
+    if (!data.length) {
+      wrap.textContent = "No submitted locations yet.";
+      return;
+    }
+
+    const rows = data.map(item => {
+      const lat = Number(item.latitude).toFixed(6);
+      const lon = Number(item.longitude).toFixed(6);
+      const accuracy = item.accuracy_m == null ? "" : Math.round(item.accuracy_m) + " m";
+      const when = new Date(item.created_at).toLocaleString();
+
+      const mapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
+
+      return `
+        <tr>
+          <td>${when}</td>
+          <td>${lat}</td>
+          <td>${lon}</td>
+          <td>${accuracy}</td>
+          <td><a href="${mapUrl}" target="_blank" rel="noopener">Open map</a></td>
+        </tr>`;
+    }).join("");
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Submitted</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Accuracy</th>
+            <th>Map</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  async function showAppIfSignedIn() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    if (session) {
+      loginCard.style.display = "none";
+      app.style.display = "block";
+      await loadLocations();
+    } else {
+      loginCard.style.display = "block";
+      app.style.display = "none";
+    }
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    msg.textContent = "Signing in...";
+
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value
+    });
+
+    if (error) {
+      msg.textContent = error.message;
+      return;
+    }
+
+    msg.textContent = "";
+    await showAppIfSignedIn();
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", loadLocations);
+
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await supabaseClient.auth.signOut();
+    await showAppIfSignedIn();
+  });
+
+  showAppIfSignedIn();
+</script>
+</body>
+</html>
